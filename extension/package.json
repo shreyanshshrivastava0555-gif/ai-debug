@@ -1,0 +1,83 @@
+{
+    "name": "livedebug-ai",
+    "displayName": "LiveDebug AI",
+    "description": "Real-time AI debugging assistant — detects and explains terminal errors instantly",
+    "version": "0.1.0",
+    "publisher": "livedebug",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Debuggers",
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./out/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "livedebug.analyzeSelection",
+                "title": "LiveDebug AI: Analyze Selected Error"
+            },
+            {
+                "command": "livedebug.toggleAutoWatch",
+                "title": "LiveDebug AI: Toggle Auto Terminal Watch"
+            },
+            {
+                "command": "livedebug.openPanel",
+                "title": "LiveDebug AI: Open Debug Panel"
+            }
+        ],
+        "configuration": {
+            "title": "LiveDebug AI",
+            "properties": {
+                "livedebug.serverUrl": {
+                    "type": "string",
+                    "default": "http://localhost:8000",
+                    "description": "LiveDebug AI backend server URL"
+                },
+                "livedebug.autoWatch": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically watch terminal output for errors"
+                },
+                "livedebug.language": {
+                    "type": "string",
+                    "default": "auto",
+                    "enum": [
+                        "auto",
+                        "python",
+                        "javascript",
+                        "java",
+                        "go",
+                        "rust"
+                    ],
+                    "description": "Force a specific language parser (auto-detect by default)"
+                }
+            }
+        },
+        "keybindings": [
+            {
+                "command": "livedebug.analyzeSelection",
+                "key": "ctrl+shift+d",
+                "mac": "cmd+shift+d"
+            }
+        ]
+    },
+    "scripts": {
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "package": "vsce package"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "@types/node": "^20.0.0",
+        "typescript": "^5.4.0",
+        "@vscode/vsce": "^2.24.0"
+    },
+    "dependencies": {
+        "ws": "^8.17.0"
+    }
+}
