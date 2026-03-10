@@ -1,0 +1,15 @@
+# LiveDebug AI
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.vscode/
+.idea/
+node_modules/
+out/
+*.vsix
+*.class
+*.jar
+.DS_Store
+livedebug/

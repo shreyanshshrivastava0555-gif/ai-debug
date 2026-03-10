@@ -1,6 +1,7 @@
 """
 LiveDebug AI — API Routes
 REST endpoints for error analysis and debugging sessions.
+Mounted at: /api/debug
 """
 
 from fastapi import APIRouter, HTTPException
@@ -24,26 +25,25 @@ class TerminalErrorRequest(BaseModel):
 class DebugResponse(BaseModel):
     error_type: str
     error_message: str
-    file_path: Optional[str]
-    line_number: Optional[int]
+    file_path: Optional[str] = None
+    line_number: Optional[int] = None
     explanation: str
     suggested_fix: str
-    code_snippet: Optional[str]
+    code_snippet: Optional[str] = None
     confidence: float
 
 
 @router.post("/analyze", response_model=DebugResponse)
 async def analyze_error(request: TerminalErrorRequest):
     """
+    POST /api/debug/analyze
     Accepts raw terminal output, parses the error, and returns AI analysis.
     Called by all editor plugins (VS Code, JetBrains, Neovim).
     """
-    # Step 1: Parse raw terminal output into structured error
     parsed = error_parser.parse(request.raw_output, request.language)
     if not parsed:
         raise HTTPException(status_code=400, detail="No recognizable error found in output")
 
-    # Step 2: Send structured error + optional code context to AI
     analysis = await ai_analyzer.analyze(parsed, request.file_context)
 
     return DebugResponse(
@@ -60,4 +60,5 @@ async def analyze_error(request: TerminalErrorRequest):
 
 @router.get("/health")
 async def health_check():
+    """GET /api/debug/health"""
     return {"status": "ok", "service": "LiveDebug AI Backend"}

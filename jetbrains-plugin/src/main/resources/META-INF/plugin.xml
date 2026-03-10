@@ -1,0 +1,15 @@
+<idea-plugin>
+    <id>com.livedebug.ai</id>
+    <name>LiveDebug AI</name>
+    <vendor email="support@livedebug.ai" url="http://www.livedebug.ai">LiveDebug</vendor>
+    <description><![CDATA[
+      Real-time AI debugging assistant — detects and explains terminal errors instantly.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.livedebug.settings.LiveDebugSettings"/>
+        <postStartupActivity implementation="com.livedebug.terminal.TerminalErrorWatcher"/>
+    </extensions>
+</idea-plugin>
