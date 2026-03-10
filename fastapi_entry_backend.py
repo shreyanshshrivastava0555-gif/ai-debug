@@ -12,6 +12,8 @@ load_dotenv()
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 import uvicorn
 
 from api.routes import router
@@ -36,6 +38,15 @@ manager = WebSocketManager()
 
 # --- REST endpoint: /api/debug/analyze, /api/debug/health ---
 app.include_router(router, prefix="/api/debug")
+
+# --- Serve the testing UI at /static ---
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
+
+
+@app.get("/")
+async def root():
+    """Redirect root to the testing console."""
+    return RedirectResponse(url="/static/index.html")
 
 
 # --- WebSocket endpoint: /ws/debug ---
@@ -74,3 +85,4 @@ async def root_health():
 
 if __name__ == "__main__":
     uvicorn.run("fastapi_entry_backend:app", host="0.0.0.0", port=8000, reload=True)
+

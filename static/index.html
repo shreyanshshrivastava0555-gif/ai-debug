@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveDebug AI — Test Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --surface-hover: #1a2332;
+            --border: #1e293b;
+            --border-focus: #3b82f6;
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.15);
+            --green: #10b981;
+            --green-bg: rgba(16, 185, 129, 0.08);
+            --red: #ef4444;
+            --red-bg: rgba(239, 68, 68, 0.08);
+            --yellow: #f59e0b;
+            --yellow-bg: rgba(245, 158, 11, 0.08);
+            --purple: #a78bfa;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 300;
+        }
+
+        /* Status badge */
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 36px;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .status-badge.online {
+            background: var(--green-bg);
+            color: var(--green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Main card */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+
+        .card:focus-within {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        /* Language selector */
+        .lang-select {
+            display: flex;
+            gap: 4px;
+        }
+
+        .lang-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .lang-btn.active {
+            background: var(--accent-glow);
+            color: var(--accent);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Textarea */
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 16px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            resize: vertical;
+            outline: none;
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        /* Actions bar */
+        .actions {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .sample-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .sample-btn {
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sample-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+            border-color: var(--text-muted);
+        }
+
+        .analyze-btn {
+            padding: 10px 28px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent), #6366f1);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .analyze-btn .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Result panel */
+        .result-card {
+            display: none;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .result-card.visible { display: block; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-section:last-child { border-bottom: none; }
+
+        .result-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .result-value {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .error-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: var(--red-bg);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--red);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .file-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--yellow);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+
+        .explanation-text {
+            color: var(--text);
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .fix-text {
+            color: var(--green);
+            font-size: 14px;
+            line-height: 1.7;
+            background: var(--green-bg);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+
+        .code-block {
+            background: #0d1117;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.7;
+            overflow-x: auto;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+        }
+
+        .confidence-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .confidence-track {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: linear-gradient(90deg, var(--red), var(--yellow), var(--green));
+            transition: width 0.8s ease-out;
+        }
+
+        .confidence-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 36px;
+        }
+
+        /* Error state */
+        .error-msg {
+            display: none;
+            padding: 14px 20px;
+            background: var(--red-bg);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius);
+            color: var(--red);
+            font-size: 13px;
+            margin-bottom: 24px;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .error-msg.visible { display: block; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding-top: 32px;
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">🐛</div>
+                <h1>LiveDebug AI</h1>
+            </div>
+            <p>Paste your terminal error — get an instant AI explanation &amp; fix</p>
+        </div>
+
+        <!-- Status -->
+        <div class="status-bar">
+            <span class="status-badge online" id="serverStatus">
+                <span class="dot"></span>
+                Server Online · localhost:8000
+            </span>
+        </div>
+
+        <!-- Input Card -->
+        <div class="card" id="inputCard">
+            <div class="card-header">
+                <span class="card-title">📋 Paste Error Output</span>
+                <div class="lang-select">
+                    <button class="lang-btn active" data-lang="auto">Auto</button>
+                    <button class="lang-btn" data-lang="python">Python</button>
+                    <button class="lang-btn" data-lang="javascript">JS</button>
+                    <button class="lang-btn" data-lang="java">Java</button>
+                    <button class="lang-btn" data-lang="go">Go</button>
+                    <button class="lang-btn" data-lang="rust">Rust</button>
+                </div>
+            </div>
+            <textarea id="errorInput" placeholder="Paste your terminal error here...&#10;&#10;Example:&#10;Traceback (most recent call last):&#10;  File &quot;app.py&quot;, line 10, in main&#10;    x = 1/0&#10;ZeroDivisionError: division by zero"></textarea>
+            <div class="actions">
+                <div class="sample-btns">
+                    <button class="sample-btn" onclick="loadSample('python')">🐍 Python</button>
+                    <button class="sample-btn" onclick="loadSample('js')">⚡ Node.js</button>
+                    <button class="sample-btn" onclick="loadSample('java')">☕ Java</button>
+                    <button class="sample-btn" onclick="loadSample('go')">🔵 Go</button>
+                    <button class="sample-btn" onclick="loadSample('rust')">🦀 Rust</button>
+                </div>
+                <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+                    Analyze Error
+                </button>
+            </div>
+        </div>
+
+        <!-- Error message -->
+        <div class="error-msg" id="errorMsg"></div>
+
+        <!-- Result Card -->
+        <div class="card result-card" id="resultCard">
+            <div class="card-header">
+                <span class="card-title">🔍 Analysis Result</span>
+                <span id="resultLang" class="status-badge online" style="font-size:11px;padding:3px 10px;"></span>
+            </div>
+
+            <!-- Error type -->
+            <div class="result-section">
+                <div class="result-label">Error Detected</div>
+                <span class="error-badge" id="resultErrorType"></span>
+            </div>
+
+            <!-- File & Line -->
+            <div class="result-section" id="fileSection" style="display:none;">
+                <div class="result-label">Location</div>
+                <span class="file-info" id="resultFileInfo"></span>
+            </div>
+
+            <!-- Explanation -->
+            <div class="result-section">
+                <div class="result-label">Explanation</div>
+                <p class="explanation-text" id="resultExplanation"></p>
+            </div>
+
+            <!-- Suggested Fix -->
+            <div class="result-section">
+                <div class="result-label">Suggested Fix</div>
+                <div class="fix-text" id="resultFix"></div>
+            </div>
+
+            <!-- Code Snippet -->
+            <div class="result-section" id="codeSection" style="display:none;">
+                <div class="result-label">Corrected Code</div>
+                <pre class="code-block" id="resultCode"></pre>
+            </div>
+
+            <!-- Confidence -->
+            <div class="result-section">
+                <div class="result-label">Confidence</div>
+                <div class="confidence-bar">
+                    <div class="confidence-track">
+                        <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
+                    </div>
+                    <span class="confidence-label" id="confidenceLabel">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            LiveDebug AI · <a href="http://localhost:8000/docs" target="_blank">API Docs</a> · Built with FastAPI
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000";
+        let selectedLang = "auto";
+
+        // Language selector
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedLang = btn.dataset.lang;
+            });
+        });
+
+        // Sample errors
+        const samples = {
+            python: `Traceback (most recent call last):
+  File "/Users/demo/app.py", line 42, in <module>
+    main()
+  File "/Users/demo/app.py", line 10, in main
+    result = data["users"][0]["name"]
+KeyError: 'users'`,
+            js: `TypeError: Cannot read properties of undefined (reading 'map')
+    at renderList (/Users/demo/src/App.js:15:22)
+    at Component.render (/Users/demo/src/App.js:8:5)
+    at processChild (node:internal/process:234:14)`,
+            java: `Exception in thread "main" java.lang.NullPointerException: Cannot invoke "String.length()" because "str" is null
+\tat com.example.Main.processInput(Main.java:25)
+\tat com.example.Main.main(Main.java:12)`,
+            go: `panic: runtime error: index out of range [5] with length 3
+
+goroutine 1 [running]:
+main.processSlice(...)
+\t/Users/demo/main.go:15 +0x1b
+main.main()
+\t/Users/demo/main.go:8 +0x2f`,
+            rust: `error[E0382]: use of moved value: \`data\`
+ --> src/main.rs:8:20
+  |
+5 |     let data = vec![1, 2, 3];
+  |         ---- move occurs because \`data\` has type \`Vec<i32>\`
+6 |     let data2 = data;
+  |                 ---- value moved here
+8 |     println!("{:?}", data);
+  |                      ^^^^ value used here after move`
+        };
+
+        function loadSample(lang) {
+            document.getElementById('errorInput').value = samples[lang];
+            // Auto-select the language button
+            const langMap = { python: 'python', js: 'javascript', java: 'java', go: 'go', rust: 'rust' };
+            document.querySelectorAll('.lang-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.lang === (langMap[lang] || 'auto'));
+            });
+            selectedLang = langMap[lang] || 'auto';
+        }
+
+        async function analyze() {
+            const input = document.getElementById('errorInput').value.trim();
+            if (!input) return;
+
+            const btn = document.getElementById('analyzeBtn');
+            const errDiv = document.getElementById('errorMsg');
+            const resultCard = document.getElementById('resultCard');
+
+            // Reset
+            errDiv.classList.remove('visible');
+            resultCard.classList.remove('visible');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Analyzing...';
+
+            try {
+                const body = { raw_output: input };
+                if (selectedLang !== 'auto') body.language = selectedLang;
+
+                const resp = await fetch(`${API_URL}/api/debug/analyze`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || `HTTP ${resp.status}`);
+                }
+
+                const data = await resp.json();
+                showResult(data);
+
+            } catch (e) {
+                errDiv.textContent = `⚠ ${e.message}`;
+                errDiv.classList.add('visible');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Analyze Error';
+            }
+        }
+
+        function showResult(data) {
+            const card = document.getElementById('resultCard');
+
+            document.getElementById('resultErrorType').textContent = `${data.error_type}: ${data.error_message}`;
+
+            // File info
+            const fileSection = document.getElementById('fileSection');
+            if (data.file_path) {
+                fileSection.style.display = '';
+                document.getElementById('resultFileInfo').textContent = `📄 ${data.file_path}${data.line_number ? ` : line ${data.line_number}` : ''}`;
+            } else {
+                fileSection.style.display = 'none';
+            }
+
+            document.getElementById('resultExplanation').textContent = data.explanation;
+            document.getElementById('resultFix').textContent = data.suggested_fix;
+
+            // Code snippet
+            const codeSection = document.getElementById('codeSection');
+            if (data.code_snippet) {
+                codeSection.style.display = '';
+                document.getElementById('resultCode').textContent = data.code_snippet;
+            } else {
+                codeSection.style.display = 'none';
+            }
+
+            // Confidence
+            const pct = Math.round(data.confidence * 100);
+            document.getElementById('confidenceFill').style.width = `${pct}%`;
+            document.getElementById('confidenceLabel').textContent = `${pct}%`;
+
+            card.classList.add('visible');
+        }
+
+        // Check server health on load
+        fetch(`${API_URL}/health`)
+            .then(r => r.json())
+            .then(() => {
+                document.getElementById('serverStatus').innerHTML = '<span class="dot"></span>Server Online · localhost:8000';
+            })
+            .catch(() => {
+                const badge = document.getElementById('serverStatus');
+                badge.classList.remove('online');
+                badge.style.background = 'var(--red-bg)';
+                badge.style.color = 'var(--red)';
+                badge.style.borderColor = 'rgba(239,68,68,0.2)';
+                badge.innerHTML = '<span class="dot"></span>Server Offline';
+            });
+    </script>
+</body>
+</html>
